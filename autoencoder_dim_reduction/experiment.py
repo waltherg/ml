@@ -3,6 +3,7 @@ import random
 
 import pandas as pd
 import numpy as np
+import optuna
 import torch
 from torch import nn
 from sklearn.preprocessing import LabelEncoder
@@ -77,15 +78,53 @@ class Autoencoder(nn.Module):
         return x
 
 
-# Train autoencoder
-autoencoder = Autoencoder(input_size=X_train.shape[1], latent_dim=X_test.shape[1]//8).to(device)
+def objective(trial):
+    # Hyperparameters to be tuned
+    learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True)
+    latent_dim = trial.suggest_int("latent_dim", 10, 100)
+
+    # Create and train the autoencoder using the hyperparameters
+    autoencoder = Autoencoder(input_size=X_train.shape[1], latent_dim=latent_dim).to(device)
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(autoencoder.parameters(), lr=learning_rate)
+
+    X_train_tensor = torch.tensor(X_train, dtype=torch.float32).to(device)
+    # X_test_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
+
+    no_epochs = 10000
+    for epoch in tqdm(range(no_epochs)):
+        autoencoder.train()
+        optimizer.zero_grad()
+        outputs = autoencoder(X_train_tensor)
+        loss = criterion(outputs, X_train_tensor)
+        loss.backward()
+        optimizer.step()
+
+    # Evaluate the autoencoder using the loss
+    autoencoder.eval()
+    with torch.no_grad():
+        outputs = autoencoder(X_train_tensor)
+        loss = criterion(outputs, X_train_tensor)
+
+    return loss.item()
+
+
+study = optuna.create_study(direction="minimize")
+study.optimize(objective, n_trials=5)  # Trial 3 found to be ideal
+
+# Get the best hyperparameters
+best_params = study.best_params
+print("Best hyperparameters:", best_params)
+
+# Train the autoencoder using the best hyperparameters
+autoencoder = Autoencoder(input_size=X_train.shape[1], latent_dim=best_params["latent_dim"]).to(device)
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(autoencoder.parameters(), lr=best_params["learning_rate"])
 
 X_train_tensor = torch.tensor(X_train, dtype=torch.float32).to(device)
 X_test_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
 
-no_epochs = 19_000
+no_epochs = 10000
 for epoch in tqdm(range(no_epochs)):
     autoencoder.train()
     optimizer.zero_grad()

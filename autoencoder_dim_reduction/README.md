@@ -20,7 +20,7 @@ We compared the performance of XGBoost on the raw data with the performance of X
 ### Results
 The classification results are as follows:
 
-Without Dimensionality Reduction:
+Event classification without dimensionality reduction:
 
 Dimensions before reduction: 561
 - Accuracy: 0.9389
@@ -28,13 +28,13 @@ Dimensions before reduction: 561
 - Recall: 0.9389
 - F1 Score: 0.9387
 
-With Dimensionality Reduction using Autoencoder:
+Event classification with dimensionality reduction using autoencoder:
 
-Dimensions after reduction: 70
-- Accuracy: 0.8755
-- Precision: 0.8770
-- Recall: 0.8755
-- F1 Score: 0.8759
+Dimensions after reduction: 73
+- Accuracy: 0.8945
+- Precision: 0.8958
+- Recall: 0.8945
+- F1 Score: 0.8945
 
 The dimensionality reduction using the autoencoder did not improve the classification performance. In fact, the performance metrics (accuracy, precision, recall, and F1 score) were slightly lower for the dimensionality-reduced data.
 
@@ -57,16 +57,11 @@ PyTorch version: 2.1.0.dev20230429
 PyTorch built with MPS: True
 MPS available: True
 Using device: mps
-Epoch [1000/10000], Loss: 0.522490
-Epoch [2000/10000], Loss: 0.520475
-Epoch [3000/10000], Loss: 0.520353
-Epoch [4000/10000], Loss: 0.520309
-Epoch [5000/10000], Loss: 0.520263
-Epoch [6000/10000], Loss: 0.520185
-Epoch [7000/10000], Loss: 0.520078
-Epoch [8000/10000], Loss: 0.519555
-Epoch [9000/10000], Loss: 0.519537
-Epoch [10000/10000], Loss: 0.519537
+...
+Trial 49 finished with value: 0.5075084567070007 and parameters: {'learning_rate': 0.00032998782551153636, 'latent_dim': 68}. Best is trial 3 with value: 0.5051108002662659.
+Best hyperparameters: {'learning_rate': 0.00021210118001757517, 'latent_dim': 73}
+...
+Epoch [10000/10000], Loss: 0.506044
 Event classification without dimensionality reduction:
 Dimensions before reduction: 561
 Accuracy: 0.9389
@@ -74,9 +69,9 @@ Precision: 0.9404
 Recall: 0.9389
 F1 Score: 0.9387
 Event classification with dimensionality reduction using autoencoder:
-Dimensions after reduction: 70
-Accuracy: 0.8755
-Precision: 0.8770
-Recall: 0.8755
-F1 Score: 0.8759
+Dimensions after reduction: 73
+Accuracy: 0.8945
+Precision: 0.8958
+Recall: 0.8945
+F1 Score: 0.8945
 ```
