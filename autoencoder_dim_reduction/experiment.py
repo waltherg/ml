@@ -24,7 +24,7 @@ from tqdm import tqdm
 from xgboost import XGBClassifier
 
 
-NO_EPOCHS = 1000
+NO_EPOCHS = 10_000
 
 
 mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
@@ -84,19 +84,19 @@ class Autoencoder(nn.Module):
         super(Autoencoder, self).__init__()
         self.encoder = nn.Sequential(
             nn.Linear(input_size, input_size // 2),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(input_size // 2, input_size // 4),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(input_size // 4, latent_dim),
-            nn.ReLU()
+            nn.LeakyReLU()
         )
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, input_size // 4),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(input_size // 4, input_size // 2),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(input_size // 2, input_size),
-            nn.ReLU()
+            nn.LeakyReLU()
         )
 
     def forward(self, x):
@@ -145,7 +145,7 @@ mlflow_callback = MLflowCallback(
 )
 
 study = optuna.create_study(direction="minimize", study_name=experiment_name)
-study.optimize(objective, n_trials=5, callbacks=[mlflow_callback])  # Trial 3 found to be ideal
+study.optimize(objective, n_trials=50, callbacks=[mlflow_callback])
 
 # Get the best hyperparameters
 best_params = study.best_params

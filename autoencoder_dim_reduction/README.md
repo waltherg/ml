@@ -58,10 +58,12 @@ PyTorch built with MPS: True
 MPS available: True
 Using device: mps
 ...
-Trial 49 finished with value: 0.5075084567070007 and parameters: {'learning_rate': 0.00032998782551153636, 'latent_dim': 68}. Best is trial 3 with value: 0.5051108002662659.
-Best hyperparameters: {'learning_rate': 0.00021210118001757517, 'latent_dim': 73}
+Trial 22 finished with value: 0.01120121218264103 and parameters: {'learning_rate': 0.0026830263870274316, 'latent_dim': 86}. Best is trial 22 with value: 0.01120121218264103
 ...
-Epoch [10000/10000], Loss: 0.506044
+Trial 49 finished with value: 42.9617805480957 and parameters: {'learning_rate': 0.00534212689449741, 'latent_dim': 71}. Best is trial 22 with value: 0.01120121218264103.
+Best hyperparameters: {'learning_rate': 0.0026830263870274316, 'latent_dim': 86}
+...
+Epoch [10000/10000], Loss: 0.011230
 Event classification without dimensionality reduction:
 Dimensions before reduction: 561
 Accuracy: 0.9389
@@ -69,9 +71,9 @@ Precision: 0.9404
 Recall: 0.9389
 F1 Score: 0.9387
 Event classification with dimensionality reduction using autoencoder:
-Dimensions after reduction: 73
-Accuracy: 0.8945
-Precision: 0.8958
-Recall: 0.8945
-F1 Score: 0.8945
+Dimensions after reduction: 86
+Accuracy: 0.9257
+Precision: 0.9263
+Recall: 0.9257
+F1 Score: 0.9253
 ```
