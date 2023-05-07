@@ -25,6 +25,7 @@ from xgboost import XGBClassifier
 
 
 NO_EPOCHS = 10_000
+NO_OPTUNA_TRIALS = 100
 
 
 mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
@@ -87,11 +88,15 @@ class Autoencoder(nn.Module):
             nn.LeakyReLU(),
             nn.Linear(input_size // 2, input_size // 4),
             nn.LeakyReLU(),
-            nn.Linear(input_size // 4, latent_dim),
+            nn.Linear(input_size // 4, input_size // 8),
+            nn.LeakyReLU(),
+            nn.Linear(input_size // 8, latent_dim),
             nn.LeakyReLU()
         )
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, input_size // 4),
+            nn.Linear(latent_dim, input_size // 8),
+            nn.LeakyReLU(),
+            nn.Linear(input_size // 8, input_size // 4),
             nn.LeakyReLU(),
             nn.Linear(input_size // 4, input_size // 2),
             nn.LeakyReLU(),
@@ -145,7 +150,7 @@ mlflow_callback = MLflowCallback(
 )
 
 study = optuna.create_study(direction="minimize", study_name=experiment_name)
-study.optimize(objective, n_trials=50, callbacks=[mlflow_callback])
+study.optimize(objective, n_trials=NO_OPTUNA_TRIALS, callbacks=[mlflow_callback])
 
 # Get the best hyperparameters
 best_params = study.best_params
@@ -159,7 +164,15 @@ optimizer = torch.optim.Adam(autoencoder.parameters(), lr=best_params["learning_
 X_train_tensor = torch.tensor(X_train, dtype=torch.float32).to(device)
 X_test_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
 
+# Save the model architecture as a string
+model_architecture = str(autoencoder)
+
+# Save the model architecture to a text file
+with open("autoencoder_model_architecture.txt", "w") as f:
+    f.write(model_architecture)
+
 with mlflow.start_run(run_name='Autoencoder model', nested=True):
+    mlflow.log_artifact("autoencoder_model_architecture.txt", "autoencoder_model_architecture")
     mlflow.log_params(best_params)
     mlflow.log_param("epochs", NO_EPOCHS)
 
@@ -176,7 +189,7 @@ with mlflow.start_run(run_name='Autoencoder model', nested=True):
             mlflow.log_metric("training_loss", loss.item(), step=epoch)
 
     mlflow.pytorch.log_model(autoencoder, "autoencoder")
-    mlflow.log_metric("final_loss", loss.item())
+    mlflow.log_metric("final_mse", loss.item())
 
 # Encode data
 with torch.no_grad():
@@ -213,6 +226,7 @@ with mlflow.start_run(run_name='XGBoost classifier without dimensionality reduct
 
     # Log the XGBoost model
     mlflow.sklearn.log_model(xgb_model, "xgboost_without_reduction")
+    mlflow.log_dict(xgb_model.get_booster().get_score(importance_type='gain'), "feature_importance.json")
 
     # Log the confusion matrix
     cm = confusion_matrix(y_test, y_pred, normalize='true')
@@ -256,6 +270,7 @@ with mlflow.start_run(run_name='XGBoost classifier with dimensionality reduction
 
     # Log the XGBoost model
     mlflow.sklearn.log_model(xgb_model, "xgboost_with_reduction")
+    mlflow.log_dict(xgb_model.get_booster().get_score(importance_type='gain'), "feature_importance.json")
 
     # Log the confusion matrix
     cm = confusion_matrix(y_test, y_pred, normalize='true')
