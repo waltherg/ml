@@ -150,7 +150,7 @@ def train_new_model(model, loss_fn, train_dataloader, val_dataloader, model_file
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # Define the number of epochs
-    num_epochs = 10
+    num_epochs = 1000
 
     # Define the lists to store the loss values
     train_losses = []

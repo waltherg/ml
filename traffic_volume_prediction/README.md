@@ -15,6 +15,9 @@ In addition to the raw traffic volume data, we also use time encoding to help th
 ## DNN Architecture
 The DNN used in this project consists of an input layer, two hidden layers, and an output layer. The input layer takes in the data in each window and passes it through a fully connected layer with ReLU activation functions.
 
+## Early Stopping
+Early stopping is used to prevent overfitting. Specifically, the training is stopped when the validation loss stops decreasing for a certain number of epochs. In our current experiments, early stopping kicks in at around 65 epochs.
+
 ## Results
 The mean absolute error (MAE) is used as the evaluation metric for this project. The MAE is calculated as the average absolute difference between the predicted traffic volume and the true traffic volume over all forecast horizons. The MAE is reported in vehicles and increases as the forecast horizon gets larger.
 
