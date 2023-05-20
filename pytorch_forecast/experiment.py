@@ -53,9 +53,10 @@ def time_encoding(df, timestamp_col):
 
 
 class DataWindow(Dataset):
-    def __init__(self, data, feature_indexes, target_indexes, input_width, label_width, shift):
+    def __init__(self, data, past_feature_indexes, future_feature_indexes, target_indexes, input_width, label_width, shift):
         self.data = data
-        self.feature_indexes = feature_indexes
+        self.past_feature_indexes = past_feature_indexes
+        self.future_feature_indexes = future_feature_indexes
         self.target_indexes = target_indexes
         self.input_width = input_width
         self.label_width = label_width
@@ -64,7 +65,9 @@ class DataWindow(Dataset):
         self.total_size = len(data) - self.window_size + 1
 
     def split_to_inputs_labels(self, window):
-        inputs = window[:self.input_width, self.feature_indexes]
+        inputs_past = window[:self.input_width, self.past_feature_indexes]
+        inputs_future = window[self.input_width:, self.future_feature_indexes]
+        inputs = torch.cat((inputs_past.view(1, -1), inputs_future.view(1, -1)), dim=1)
         labels = window[self.input_width:, self.target_indexes]
         return inputs, labels
 
@@ -127,8 +130,8 @@ def evaluate(dataloader, model, loss_fn, batch_size, model_input_size, model_out
 
     with torch.no_grad():
         for X, y in dataloader:
-            pred = model(X.view(batch_size, -1))
-            test_loss += loss_fn(pred, y.view(batch_size, -1)).item()
+            pred = model(X.view(batch_size, model_input_size))
+            test_loss += loss_fn(pred, y.view(batch_size, model_output_size)).item()
 
             test_mae += mean_absolute_error(
                 target_scaler.inverse_transform(y.cpu().view(batch_size, -1)),
@@ -198,9 +201,11 @@ if __name__ == '__main__':
     df = time_encoding(df, 'date_time')
 
     # Define features and target
-    features = [
+    past_features = [
         'temp',
         'traffic_volume',
+    ]
+    future_features = [
         'date_time_day_of_year_cos',
         'date_time_day_of_year_sin',
         'date_time_day_of_week_cos',
@@ -208,7 +213,8 @@ if __name__ == '__main__':
         'date_time_hour_of_day_cos',
         'date_time_hour_of_day_sin',
     ]
-    target = 'traffic_volume'
+    features = past_features + future_features
+    targets = ['traffic_volume']
 
     # Define the features to be normalized
     norm_features = [
@@ -225,8 +231,9 @@ if __name__ == '__main__':
     data = df[features].copy()
 
     # Feature and target indexes
-    feature_indexes = [data.columns.get_loc(col) for col in features]
-    target_indexes = [data.columns.get_loc(target)]
+    past_feature_indexes = [data.columns.get_loc(col) for col in past_features]
+    future_feature_indexes = [data.columns.get_loc(col) for col in future_features]
+    target_indexes = [data.columns.get_loc(col) for col in targets]
 
     # Define cutoff indexes for training, validation, and test sets
     train_cutoff = data.index[int(len(data) * 0.7)]
@@ -258,10 +265,34 @@ if __name__ == '__main__':
     label_width = 24*2
     shift = 1
 
-    # Create the training and validation datasets
-    train_dataset = DataWindow(train_data, feature_indexes, target_indexes, input_width, label_width, shift)
-    val_dataset = DataWindow(val_data, feature_indexes, target_indexes, input_width, label_width, shift)
-    test_dataset = DataWindow(test_data, feature_indexes, target_indexes, input_width, label_width, shift)
+    # Create the data windows
+    train_dataset = DataWindow(
+        data=train_data,
+        past_feature_indexes=past_feature_indexes,
+        future_feature_indexes=future_feature_indexes,
+        target_indexes=target_indexes,
+        input_width=input_width,
+        label_width=label_width,
+        shift=shift,
+    )
+    val_dataset = DataWindow(
+        data=val_data,
+        past_feature_indexes=past_feature_indexes,
+        future_feature_indexes=future_feature_indexes,
+        target_indexes=target_indexes,
+        input_width=input_width,
+        label_width=label_width,
+        shift=shift,
+    )
+    test_dataset = DataWindow(
+        data=test_data,
+        past_feature_indexes=past_feature_indexes,
+        future_feature_indexes=future_feature_indexes,
+        target_indexes=target_indexes,
+        input_width=input_width,
+        label_width=label_width,
+        shift=shift,
+    )
 
     # Define batch size
     batch_size = 4096
@@ -272,9 +303,9 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
 
     # Define the model
-    model_input_size = len(feature_indexes) * input_width
+    model_input_size = len(past_features) * input_width + len(future_features) * label_width
     model_hidden_size = 128
-    model_output_size = len(target_indexes) * label_width
+    model_output_size = len(targets) * label_width
 
     model = TrafficPredictor(
         input_size=model_input_size,
@@ -342,13 +373,13 @@ if __name__ == '__main__':
         index=test_data_df.index[:test_dataset.total_size]
     )
 
-    # Compute the mean absolute error per forecast horizon
-    mae = (predictions_df - targets_df).abs().mean()
-
-    # Plot the mean absolute error per forecast horizon
+    # Set plotting style
     sns.set_style('darkgrid')
     sns.set_palette('colorblind')
     sns.set_context('paper')
+
+    # Compute the mean absolute error per forecast horizon
+    mae = (predictions_df - targets_df).abs().mean()
 
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.plot(mae.index, mae, label='MAE')
@@ -357,4 +388,16 @@ if __name__ == '__main__':
     ax.set_title('Traffic Volume Prediction')
     ax.legend()
     fig.tight_layout()
-    fig.savefig(current_dir / 'traffic_volume_prediction.png', dpi=300)
+    fig.savefig(current_dir / 'traffic_volume_prediction_mae.png', dpi=300)
+
+    # Compute the mean absolute percentage error per forecast horizon
+    mape = 100. * ((predictions_df - targets_df).abs() / targets_df).mean()
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(mape.index, mape, label='MAPE')
+    ax.set_xlabel('Forecast Horizon / Hours')
+    ax.set_ylabel('MAPE / %')
+    ax.set_title('Traffic Volume Prediction')
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(current_dir / 'traffic_volume_prediction_mape.png', dpi=300)
