@@ -20,14 +20,6 @@ Install the required packages:
 $ pip install -r requirements.txt
 ```
 
-## Install PyTorch with MPS support on Mac
-
-Select appropriate PIP command from [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/).
-
-```bash
-pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
-```
-
 ## Run MLflow server
 
 To persist experiments and artifacts, let's first create a local directory to store them:
