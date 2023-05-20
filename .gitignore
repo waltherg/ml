@@ -161,3 +161,11 @@ cython_debug/
 
 *.csv
 *.zip
+*.gz
+*.tar.gz
+*.tgz
+*.bzip
+*.bzip2
+*.pth
+*.pkl
+*.pickle
