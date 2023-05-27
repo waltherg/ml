@@ -25,7 +25,7 @@ $ pip install -r requirements.txt
 Select appropriate PIP command from [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/).
 
 ```bash
-pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
+pip install --upgrade --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
 ```
 
 ## Run MLflow server
