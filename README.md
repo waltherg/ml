@@ -28,6 +28,12 @@ Select appropriate PIP command from [https://pytorch.org/get-started/locally/](h
 pip install --upgrade --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
 ```
 
+## Install PyTorch Forecasting
+
+```bash
+$ pip install --upgrade git+https://github.com/waltherg/pytorch-forecasting
+```
+
 ## Run MLflow server
 
 To persist experiments and artifacts, let's first create a local directory to store them:
