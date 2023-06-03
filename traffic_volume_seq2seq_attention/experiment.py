@@ -1,4 +1,5 @@
 import argparse
+import os
 from pathlib import Path
 import random
 
@@ -287,9 +288,17 @@ if __name__ == '__main__':
         help='Batch size',
     )
 
+    parser.add_argument(
+        '--retrain',
+        action='store_true',
+        default=False,
+        help='Retrain the model',
+    )
+
     # Parse the arguments
     args = parser.parse_args()
     batch_size = args.batch_size
+    retrain = args.retrain
 
     # Load the UCI interstate traffic data set
     df = pd.read_csv(current_dir / 'Metro_Interstate_Traffic_Volume.csv', parse_dates=['date_time'])
@@ -410,11 +419,11 @@ if __name__ == '__main__':
     model_name = f'{model.__class__.__name__}_{input_width}_{label_width}_{shift}_{batch_size}_{model_hidden_size}_{model_num_layers}_{model_dropout}'
     model_filename = f'{model_name}.pth'
 
-    try:
+    if os.path.exists(model_path / model_filename) and not retrain:
         model.load_state_dict(torch.load(model_path / model_filename))
         print(f'Loaded model from file "{model_path / model_filename}"')
-    except FileNotFoundError:
-        print(f'No model file "{model_path / model_filename}" found. Training a new model.')
+    else:
+        print(f'No model file "{model_path / model_filename}" found and / or train_new_model = "{retrain}". Training a new model.')
         train_new_model(model, loss_fn, train_dataloader, val_dataloader, model_filename)
 
     # Evaluate the model on the test data
