@@ -218,7 +218,7 @@ def evaluate(dataloader, model, loss_fn):
 def train_new_model(model, loss_fn, train_dataloader, val_dataloader, model_filename):
 
     # Define the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-1)
 
     # Scheduler to decrease learning rate by a factor of 0.1 every 10 epochs
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-6)
@@ -400,7 +400,7 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=False)
 
     # Define the model
-    model_hidden_size = 128
+    model_hidden_size = 32
     model_num_layers = 2
     model_dropout = 0.2
 
