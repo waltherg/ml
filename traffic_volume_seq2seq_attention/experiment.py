@@ -233,7 +233,7 @@ def train_new_model(model, loss_fn, train_dataloader, val_dataloader, model_file
     # Initialize variables for early stopping
     best_val_loss = float('inf')
     best_epoch = 0
-    patience = 3
+    patience = 10
     counter = 0
 
     # Train the model
