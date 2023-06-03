@@ -143,23 +143,20 @@ class Seq2Seq(nn.Module):
         out = self.decoder(encoder_outputs, hidden, cell, target)
         return out
 
-    def predict(self, source, predictions_length):
+    def predict(self, source, most_recent_target, predictions_length):
         encoder_outputs, hidden, cell = self.encoder(source)
-
-        # initialize the first input to the decoder as zeros
-        decoder_input = torch.zeros((source.size(0), 1, self.output_size), device=source.device)
 
         predictions = []
 
         for _ in range(predictions_length):
             context = self.decoder.attention(encoder_outputs, hidden)
-            x = torch.cat((context, decoder_input), -1)
+            x = torch.cat((context, most_recent_target), -1)
             out, (hidden, cell) = self.decoder.lstm(x, (hidden, cell))
             out = self.decoder.fc(out.squeeze(1))
             predictions.append(out)
 
             # use the current output as the next input to the decoder
-            decoder_input = out.unsqueeze(1)
+            most_recent_target = out.unsqueeze(1)
 
         return torch.cat(predictions, dim=1)
 
@@ -197,7 +194,8 @@ def evaluate(dataloader, model, loss_fn):
 
     with torch.no_grad():
         for X, y in dataloader:
-            pred = model(X, y)
+            pred = model.predict(X, y[:, 0, :].unsqueeze(-1), predictions_length=y.shape[1])
+            pred = pred.unsqueeze(-1)
             test_loss += loss_fn(pred, y).item()
 
             y = y.cpu()
@@ -444,7 +442,7 @@ if __name__ == '__main__':
         targets_batch = targets_batch.to(device)
 
         # Forward pass
-        outputs = model.predict(inputs, predictions_length=label_width)
+        outputs = model.predict(inputs, targets_batch[:, 0, :].unsqueeze(-1), predictions_length=label_width)
         outputs = outputs.unsqueeze(-1)
 
         # Move the outputs and targets to the CPU
