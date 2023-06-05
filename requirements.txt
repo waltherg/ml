@@ -1,7 +1,7 @@
 kaggle==1.5.13
 mlflow==2.3.2
 optuna==3.1.1
-pandas==2.0.1
+pandas==2.0.2
 scikit-learn==1.2.2
 seaborn==0.12.2
 tslearn==0.5.3.2
